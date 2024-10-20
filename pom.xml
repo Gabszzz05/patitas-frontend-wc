@@ -29,6 +29,23 @@
 	<properties>
 		<java.version>21</java.version>
 	</properties>
+
+	<!-- BOM => Lista de Materiales (Build Of Materials) -->
+	<!-- Para definir Spring Cloud necesitamos su BOM -->
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>2023.0.3</version> <!-- La version tiene que estar alineada con la version de spring -->
+				<type>pom</type>
+				<scope>import</scope> <!-- Para que se importe el BOM necesario -->
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	<!-- Esto solo nos permitira acceder al catalogo o BOM que tiene Spring CLoud -->
+	<!-- Por eso debemos acceder a la dependencia que queremos usar de ese BOM o catalgo -->
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -52,6 +69,12 @@
 			<groupId>io.projectreactor</groupId>
 			<artifactId>reactor-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<!-- Utilizamos el Starter Open Feign -->
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-openfeign</artifactId>
 		</dependency>
 	</dependencies>
 

@@ -1,10 +1,12 @@
 package pe.edu.dibertec.patitas_frontend_wc.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
+import pe.edu.dibertec.patitas_frontend_wc.client.AutenticacionClient;
 import pe.edu.dibertec.patitas_frontend_wc.dto.LogOutResponseDTO;
 import pe.edu.dibertec.patitas_frontend_wc.dto.LoginRequestDTO;
 import pe.edu.dibertec.patitas_frontend_wc.dto.LoginResponseDTO;
@@ -13,7 +15,7 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/login")
-@CrossOrigin(origins = "http://localhost:5173")
+//@CrossOrigin(origins = "http://localhost:5173")
 public class LoginControllerAsync {
 
     //NUEVO....
@@ -73,5 +75,6 @@ public class LoginControllerAsync {
             return Mono.just(new LogOutResponseDTO("99", "ERROR: Ocurrio un problema en el servidor"));
         }
     }
+
 
 }

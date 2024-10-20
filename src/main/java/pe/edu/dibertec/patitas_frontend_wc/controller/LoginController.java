@@ -1,14 +1,15 @@
 package pe.edu.dibertec.patitas_frontend_wc.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
+import pe.edu.dibertec.patitas_frontend_wc.client.AutenticacionClient;
+import pe.edu.dibertec.patitas_frontend_wc.dto.LogOutResponseDTO;
 import pe.edu.dibertec.patitas_frontend_wc.dto.LoginRequestDTO;
 import pe.edu.dibertec.patitas_frontend_wc.dto.LoginResponseDTO;
 import pe.edu.dibertec.patitas_frontend_wc.viewModel.LoginModel;
@@ -16,11 +17,16 @@ import reactor.core.publisher.Mono;
 
 @Controller
 @RequestMapping("/login")
+@CrossOrigin(origins = "http://localhost:5173")
 public class LoginController {
 
     //NUEVO....
     @Autowired
     WebClient webClientAutenticacion;
+
+    //Feign Client
+    @Autowired
+    AutenticacionClient autenticacionClient;
 
     //Metodo para mostrar la pantalla de inicio
     @GetMapping("/inicio")
@@ -104,4 +110,81 @@ public class LoginController {
             return "inicioPage";
         }
     }
+
+    //Login
+    //Utilizamos FeignClient
+    @PostMapping("/autenticar-feign")
+    public ResponseEntity<LoginModel> autenticarFeign(@RequestBody LoginRequestDTO loginRequestDTO) {
+
+        System.out.println("Consumiendo con Feign Client el LOGIN");
+
+        // Validar campos de entrada
+        if (loginRequestDTO.tipoDocumento() == null || loginRequestDTO.tipoDocumento().isEmpty() ||
+                loginRequestDTO.numeroDocumento() == null || loginRequestDTO.numeroDocumento().isEmpty() ||
+                loginRequestDTO.password() == null || loginRequestDTO.password().isEmpty()) {
+
+            // Enviamos un mensaje de Error
+            LoginModel loginModel = new LoginModel("01", "Error: Debe completar correctamente sus credenciales", "");
+            return ResponseEntity.badRequest().body(loginModel);
+        }
+
+        try {
+            // Consumir Servicio con Feign Client
+            ResponseEntity<LoginResponseDTO> responseEntity = autenticacionClient.login(loginRequestDTO);
+
+            // Validar resultado del servicio
+            if (responseEntity.getStatusCode().is2xxSuccessful()) {
+                LoginResponseDTO loginResponseDTO = responseEntity.getBody();
+
+                if ("00".equals(loginResponseDTO.code())) {
+                    LoginModel loginModel = new LoginModel("00", "", loginResponseDTO.user());
+                    return ResponseEntity.ok(loginModel);
+                } else {
+                    LoginModel loginModel = new LoginModel("02", "ERROR: Autenticacion Fallida", "");
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(loginModel);
+                }
+            } else {
+                LoginModel loginModel = new LoginModel("02", "ERROR: Autenticacion Fallida", "");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(loginModel);
+            }
+        } catch (Exception e) {
+            LoginModel loginModel = new LoginModel("99", "ERROR: No se pudo conectar con el servidor", "");
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(loginModel);
+        }
+    }
+
+    //LogOut
+    @PostMapping("/logout-feign")
+    public ResponseEntity<LogOutResponseDTO> logoutFeign() {
+
+        System.out.println("Consumiendo con Feign Client el LOGOUT");
+
+        try {
+            // Consumir el servicio de logout con Feign Client
+            ResponseEntity<LogOutResponseDTO> responseEntity = autenticacionClient.logout();
+
+            // Validar el resultado del servicio
+            if (responseEntity.getStatusCode().is2xxSuccessful()) {
+                LogOutResponseDTO logOutResponseDTO = responseEntity.getBody();
+
+                if ("00".equals(logOutResponseDTO.code())) {
+                    return ResponseEntity.ok(new LogOutResponseDTO("00", "Cierre de Sesion correcto"));
+                } else {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(new LogOutResponseDTO("02", "ERROR: Cierre de Sesion Fallida"));
+                }
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new LogOutResponseDTO("02", "ERROR: Cierre de Sesion Fallida"));
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new LogOutResponseDTO("99", "ERROR: Ocurrió un problema en el servidor"));
+        }
+    }
+
+
+
 }
